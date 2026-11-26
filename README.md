@@ -1,67 +1,204 @@
-basket pogibshego-game
-function resize() {
-    W = c.width = window.innerWidth;
-    H = c.height = window.innerHeight;
-  }
-  resize();
-  window.addEventListener('resize', resize);
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Basket Pogibshego</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(180deg, #0f0c29 0%, #302b63 60%, #24243e 100%);
+            color: white;
+            font-family: -apple-system, sans-serif;
+            overflow: hidden;
+            height: 100vh;
+            user-select: none;
+            touch-action: manipulation;
+        }
+        #score-board {
+            position: fixed;
+            top: 15px;
+            width: 100%;
+            text-align: center;
+            font-size: 42px;
+            font-weight: bold;
+            text-shadow: 2px 2px 0 #000;
+        }
+        #best {
+            position: fixed;
+            top: 65px;
+            width: 100%;
+            text-align: center;
+            font-size: 16px;
+            color: #b8b8ff;
+        }
+        #ball {
+            width: 45px;
+            height: 45px;
+            background: radial-gradient(circle at 30% 30%, #ffb347, #e65c00);
+            border: 3px solid #7a3000;
+            border-radius: 50%;
+            position: fixed;
+            bottom: 120px;
+            left: 50%;
+            transform: translateX(-50%);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        }
+        #hoop {
+            position: fixed;
+            top: 140px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90px;
+            height: 12px;
+            background: #ff5252;
+            border-radius: 6px;
+            box-shadow: 0 0 15px rgba(255,80,80,0.7);
+        }
+        #net {
+            position: fixed;
+            top: 152px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 70px;
+            height: 40px;
+            border: 2px dashed rgba(255,255,255,0.5);
+            border-top: none;
+            border-radius: 0 0 12px 12px;
+        }
+        #tap-zone {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        #fly-ball {
+            position: fixed;
+            width: 45px;
+            height: 45px;
+            background: radial-gradient(circle at 30% 30%, #ffb347, #e65c00);
+            border: 3px solid #7a3000;
+            border-radius: 50%;
+            display: none;
+            pointer-events: none;
+            z-index: 10;
+        }
+        #message {
+            position: fixed;
+            top: 45%;
+            width: 100%;
+            text-align: center;
+            font-size: 28px;
+            font-weight: bold;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
 
-  let basketX = W / 2;
-  let score = 0;
-  let best = 0;
-  let balls = ;
+    <div id="score-board">0</div>
+    <div id="best">Рекорд: 0</div>
 
-  function spawn() {
-    balls.push({
-      x: 30 + Math.random() * (W - 60),
-      y: -20,
-      vy: 2 + Math.random() * 2 + score * 0.1
-    });
-  }
-  setInterval(spawn, 1200);
+    <div id="hoop"></div>
+    <div id="net"></div>
 
-  function move(e) {
-    const t = e.touches ? e.touches : e;
-    basketX = t.clientX;
-  }
-  window.addEventListener('mousemove', move);
-  window.addEventListener('touchmove', move, { passive: false });
+    <div id="ball"></div>
+    <div id="fly-ball"></div>
 
-  function loop() {
-    x.fillStyle = '#1a3a5c';
-    x.fillRect(0, 0, W, H);
+    <div id="message">ГОООЛ! 🏀</div>
+    <div id="tap-zone"></div>
 
-    // Корзина
-    x.fillStyle = '#f80';
-    x.fillRect(basketX - 45, H - 60, 90, 20);
-    x.fillStyle = '#ff5';
-    x.fillRect(basketX - 45, H - 64, 90, 6);
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.ready();
+        tg.expand();
 
-    for (let b of balls) {
-      b.y += b.vy;
-      if (b.y > H - 70 && b.y < H - 40 && Math.abs(b.x - basketX) < 50 && !b.caught) {
-        b.caught = true;
-        score++;
-        if (score > best) best = score;
-      }
-      if (b.y < H + 30 && !b.caught) {
-        x.beginPath();
-        x.arc(b.x, b.y, 14, 0, Math.PI * 2);
-        x.fillStyle = '#fff';
-        x.fill();
-        x.strokeStyle = '#000';
-        x.stroke();
-      }
-    }
+        let score = parseInt(localStorage.getItem('bp_score')) || 0;
+        let best = parseInt(localStorage.getItem('bp_best')) || 0;
 
-    balls = balls.filter(b => !b.caught && b.y < H + 30);
+        const scoreEl = document.getElementById('score-board');
+        const bestEl = document.getElementById('best');
+        const ball = document.getElementById('ball');
+        const flyBall = document.getElementById('fly-ball');
+        const message = document.getElementById('message');
+        const hoop = document.getElementById('hoop');
+        const tapZone = document.getElementById('tap-zone');
 
-    x.fillStyle = '#fff';
-    x.font = '28px sans-serif';
-    x.fillText('Счёт: ' + score, 10, 34);
-    x.fillText('Рекорд: ' + best, 10, 68);
+        scoreEl.innerText = score;
+        bestEl.innerText = 'Рекорд: ' + best;
 
-    requestAnimationFrame(loop);
-  }
-  loop();
-</script>
+        let hoopX = window.innerWidth / 2;
+        let ballX = window.innerWidth / 2;
+        let hoopDir = 1;
+
+        function positionHoop() {
+            hoopX += hoopDir * 2;
+            if (hoopX > window.innerWidth - 60) hoopDir = -1;
+            if (hoopX < 60) hoopDir = 1;
+            hoop.style.left = hoopX + 'px';
+            hoop.style.transform = 'translateX(-50%)';
+            document.getElementById('net').style.left = hoopX + 'px';
+            document.getElementById('net').style.transform = 'translateX(-50%)';
+        }
+        setInterval(positionHoop, 20);
+
+        // Управление: тап справа — мяч вправо, тап слева — влево
+        tapZone.addEventListener('click', (e) => {
+            if (e.clientX > window.innerWidth / 2) {
+                ballX = Math.min(window.innerWidth - 40, ballX + 40);
+            } else {
+                ballX = Math.max(40, ballX - 40);
+            }
+            ball.style.left = ballX + 'px';
+            ball.style.transform = 'translateX(-50%)';
+            throwBall();
+        });
+
+        function throwBall() {
+            flyBall.style.display = 'block';
+            flyBall.style.left = ballX + 'px';
+            flyBall.style.transform = 'translateX(-50%)';
+
+            let y = window.innerHeight - 120;
+            let vy = -22;
+
+            const anim = setInterval(() => {
+                y += vy;
+                vy += 1.1;
+                flyBall.style.top = y + 'px';
+
+                if (y <= 155 && vy > 0) {
+                    if (Math.abs(ballX - hoopX) < 50) {
+                        score++;
+                        if (score > best) {
+                            best = score;
+                            localStorage.setItem('bp_best', best);
+                        }
+                        localStorage.setItem('bp_score', score);
+                        scoreEl.innerText = score;
+                        bestEl.innerText = 'Рекорд: ' + best;
+                        message.innerText = 'ГОООЛ! 🏀';
+                        message.style.color = '#7CFC00';
+                    } else {
+                        message.innerText = 'Мимо!';
+                        message.style.color = '#ff5252';
+                        score = 0;
+                        localStorage.setItem('bp_score', 0);
+                        scoreEl.innerText = 0;
+                    }
+                    message.style.opacity = 1;
+                    setTimeout(() => message.style.opacity = 0, 800);
+                    clearInterval(anim);
+                    flyBall.style.display = 'none';
+                }
+            }, 20);
+        }
+    </script>
+</body>
+</html>
+
