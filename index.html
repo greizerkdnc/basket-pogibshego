@@ -1,189 +1,55 @@
- <!DOCTYPE html>
-<html lang="ru">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Basket Pogibshego</title>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <style>
-    body {
-      margin: 0;
-      padding: 0;
-      background: linear-gradient(180deg, #1e3c72 0%, #2a5298 100%);
-      color: white;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      overflow: hidden;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      position: relative;
-    }
-    .score-board {
-      position: absolute;
-      top: 20px;
-      left: 20px;
-      font-size: 24px;
-      font-weight: bold;
-      text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
-    }
-    .best-score {
-      position: absolute;
-      top: 20px;
-      right: 20px;
-      font-size: 18px;
-      opacity: 0.8;
-    }
-    #hoop {
-      position: absolute;
-      right: 5%; /* 5% от ширины экрана - всегда справа */
-      top: 50%;
-      transform: translateY(-50%);
-      width: 12vw; /* 12% от ширины экрана - масштабируется */
-      height: 12vw;
-      border: 6px solid rgba(255, 215, 0, 0.8);
-      border-radius: 50%;
-      box-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
-      background: rgba(0, 0, 0, 0.3);
-      pointer-events: none;
-    }
-    #ball {
-      position: absolute;
-      width: 8vw; /* Размер мяча тоже зависит от экрана */
-      height: 8vw;
-      background: radial-gradient(circle, #ff9800 0%, #e65100 100%);
-      border-radius: 50%;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.4);
-      display: none;
-      transform: translateX(-50%);
-    }
-    button {
-      position: absolute;
-      bottom: 40px;
-      padding: 15px 40px;
-      font-size: 18px;
-      background: linear-gradient(45deg, #ff9800, #e65100);
-      color: white;
-      border: none;
-      border-radius: 50px;
-      cursor: pointer;
-      font-weight: bold;
-      box-shadow: 0 4px 15px rgba(255, 152, 0, 0.4);
-      transition: transform 0.1s, box-shadow 0.2s;
-      z-index: 10;
-    }
-    button:active {
-      transform: scale(0.95);
-    }
-  </style>
-</head>
-<body>
 
-  <div class="score-board">Счёт: <span id="scoreEl">0</span></div>
-  <div class="best-score"><span id="bestEl">Рекорд: 0</span></div>
-  
-  <div id="hoop"></div>
-  <div id="ball"></div>
+import asyncio
+import os
 
-  <button id="throwBtn">Бросить!</button>
+from aiogram import Bot, Dispatcher
+from aiogram.filters import CommandStart
+from aiogram.types import (
+    Message,
+    ReplyKeyboardMarkup,
+    KeyboardButton,
+    WebAppInfo
+)
+from dotenv import load_dotenv
 
-  <script>
-    const tg = window.Telegram.WebApp;
-    tg.ready();
-    tg.expand();
+load_dotenv()
 
-    const ball = document.getElementById('ball');
-    const scoreEl = document.getElementById('scoreEl');
-    const bestEl = document.getElementById('bestEl');
-    const throwBtn = document.getElementById('throwBtn');
-    const hoop = document.getElementById('hoop');
+TOKEN = os.getenv("BOT_TOKEN")
+WEBAPP_URL = os.getenv("WEBAPP_URL")
 
-    let score = parseInt(localStorage.getItem('bp_score')) || 0;
-    let best = parseInt(localStorage.getItem('bp_best')) || 0;
+if not TOKEN or not WEBAPP_URL:
+    raise RuntimeError("Проверь BOT_TOKEN и WEBAPP_URL в .env")
 
-    scoreEl.innerText = score;
-    bestEl.innerText = 'Рекорд: ' + best;
+bot = Bot(token=TOKEN)
+dp = Dispatcher()
 
-    let animationId;
-    let ballX, ballY, vx, vy;
-    let hoopRect;
 
-    // Функция для получения актуальных координат кольца
-    function getHoopPos() {
-      hoopRect = hoop.getBoundingClientRect();
-    }
+@dp.message(CommandStart())
+async def start(message: Message):
+    keyboard = ReplyKeyboardMarkup(
+        keyboard=[
+            [
+                KeyboardButton(
+                    text="🏀 ИГРАТЬ",
+                    web_app=WebAppInfo(url=WEBAPP_URL)
+                )
+            ]
+        ],
+        resize_keyboard=True
+    )
 
-    window.addEventListener('resize', getHoopPos);
-    getHoopPos(); // Получаем координаты сразу при загрузке
+    await message.answer(
+        f"🏀 Добро пожаловать в POGIBSHIY BASKET!\n\n"
+        f"Привет, {message.from_user.first_name}!\n"
+        f"Готов проверить свой бросок?\n\n"
+        f"Жми кнопку ниже и начинай игру.",
+        reply_markup=keyboard
+    )
 
-    throwBtn.addEventListener('click', () => {
-      // Сброс перед новым броском
-      score = 0;
-      scoreEl.innerText = score;
-      cancelAnimationFrame(animationId);
-      
-      ball.style.display = 'block';
-      
-      // СТАРТ: слева снизу
-      ballX = 50; 
-      ballY = window.innerHeight - 100;
-      
-      // ФИЗИКА: настроено так, чтобы гарантированно долетать до правой стороны
-      vx = 14;  // Скорость по горизонтали (достаточно высокая)
-      vy = -24; // Сила броска вверх
 
-      ball.style.left = ballX + 'px';
-      ball.style.top = ballY + 'px';
+async def main():
+    await dp.start_polling(bot)
 
-      animate();
-    });
 
-    function animate() {
-      // Гравитация
-      vy += 1.2; 
-      
-      ballX += vx;
-      ballY += vy;
-
-      ball.style.left = ballX + 'px';
-      ball.style.top = ballY + 'px';
-
-      // Проверка попадания
-      // Вычисляем центр мяча и центр кольца
-      const ballCenterX = ballX + (ball.offsetWidth / 2);
-      const ballCenterY = ballY + (ball.offsetHeight / 2);
-      const hoopCenterX = hoopRect.left + (hoopRect.width / 2);
-      const hoopCenterY = hoopRect.top + (hoopRect.height / 2);
-
-      const dx = ballCenterX - hoopCenterX;
-      const dy = ballCenterY - hoopCenterY;
-      const distance = Math.sqrt(dx*dx + dy*dy);
-      
-      // Радиус кольца примерно половина его ширины. Если мяч близко к центру кольца - гол!
-      // 0.6 * hoopRect.width - это допуск попадания
-      if (distance < (hoopRect.width * 0.6) && vy > 0) { 
-        score++;
-        scoreEl.innerText = score;
-        
-        // Визуальный эффект попадания: убираем мяч, чтобы он не засчитался дважды
-        ballY = -100; 
-        ball.style.top = ballY + 'px';
-        
-        if (score > best) {
-          best = score;
-          localStorage.setItem('bp_best', best);
-          bestEl.innerText = 'Рекорд: ' + best;
-        }
-      }
-
-      // Если мяч улетел за экран или упал вниз
-      if (ballY > window.innerHeight + 100 || ballX > window.innerWidth + 100) {
-        ball.style.display = 'none';
-      } else {
-        animationId = requestAnimationFrame(animate);
-      }
-    }
-  </script>
-</body>
-</html>
+if __name__ == "__main__":
+    asyncio.run(main())
