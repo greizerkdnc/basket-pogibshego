@@ -1,3 +1,4 @@
+basket pogibshego-game
 function resize() {
     W = c.width = window.innerWidth;
     H = c.height = window.innerHeight;
