@@ -1,203 +1,189 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Basket Pogibshego</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            background: linear-gradient(180deg, #0f0c29 0%, #302b63 60%, #24243e 100%);
-            color: white;
-            font-family: -apple-system, sans-serif;
-            overflow: hidden;
-            height: 100vh;
-            user-select: none;
-            touch-action: manipulation;
-        }
-        #score-board {
-            position: fixed;
-            top: 15px;
-            width: 100%;
-            text-align: center;
-            font-size: 42px;
-            font-weight: bold;
-            text-shadow: 2px 2px 0 #000;
-        }
-        #best {
-            position: fixed;
-            top: 65px;
-            width: 100%;
-            text-align: center;
-            font-size: 16px;
-            color: #b8b8ff;
-        }
-        #ball {
-            width: 45px;
-            height: 45px;
-            background: radial-gradient(circle at 30% 30%, #ffb347, #e65c00);
-            border: 3px solid #7a3000;
-            border-radius: 50%;
-            position: fixed;
-            bottom: 120px;
-            left: 50%;
-            transform: translateX(-50%);
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-        }
-        #hoop {
-            position: fixed;
-            top: 140px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 90px;
-            height: 12px;
-            background: #ff5252;
-            border-radius: 6px;
-            box-shadow: 0 0 15px rgba(255,80,80,0.7);
-        }
-        #net {
-            position: fixed;
-            top: 152px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 70px;
-            height: 40px;
-            border: 2px dashed rgba(255,255,255,0.5);
-            border-top: none;
-            border-radius: 0 0 12px 12px;
-        }
-        #tap-zone {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-        }
-        #fly-ball {
-            position: fixed;
-            width: 45px;
-            height: 45px;
-            background: radial-gradient(circle at 30% 30%, #ffb347, #e65c00);
-            border: 3px solid #7a3000;
-            border-radius: 50%;
-            display: none;
-            pointer-events: none;
-            z-index: 10;
-        }
-        #message {
-            position: fixed;
-            top: 45%;
-            width: 100%;
-            text-align: center;
-            font-size: 28px;
-            font-weight: bold;
-            opacity: 0;
-            transition: opacity 0.3s;
-            pointer-events: none;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Basket Pogibshego</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(180deg, #1e3c72 0%, #2a5298 100%);
+      color: white;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      overflow: hidden;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    .score-board {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      font-size: 24px;
+      font-weight: bold;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+    }
+    .best-score {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      font-size: 18px;
+      opacity: 0.8;
+    }
+    #hoop {
+      position: absolute;
+      right: 5%; /* 5% от ширины экрана - всегда справа */
+      top: 50%;
+      transform: translateY(-50%);
+      width: 12vw; /* 12% от ширины экрана - масштабируется */
+      height: 12vw;
+      border: 6px solid rgba(255, 215, 0, 0.8);
+      border-radius: 50%;
+      box-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
+      background: rgba(0, 0, 0, 0.3);
+      pointer-events: none;
+    }
+    #ball {
+      position: absolute;
+      width: 8vw; /* Размер мяча тоже зависит от экрана */
+      height: 8vw;
+      background: radial-gradient(circle, #ff9800 0%, #e65100 100%);
+      border-radius: 50%;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+      display: none;
+      transform: translateX(-50%);
+    }
+    button {
+      position: absolute;
+      bottom: 40px;
+      padding: 15px 40px;
+      font-size: 18px;
+      background: linear-gradient(45deg, #ff9800, #e65100);
+      color: white;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      font-weight: bold;
+      box-shadow: 0 4px 15px rgba(255, 152, 0, 0.4);
+      transition: transform 0.1s, box-shadow 0.2s;
+      z-index: 10;
+    }
+    button:active {
+      transform: scale(0.95);
+    }
+  </style>
 </head>
 <body>
 
-    <div id="score-board">0</div>
-    <div id="best">Рекорд: 0</div>
+  <div class="score-board">Счёт: <span id="scoreEl">0</span></div>
+  <div class="best-score"><span id="bestEl">Рекорд: 0</span></div>
+  
+  <div id="hoop"></div>
+  <div id="ball"></div>
 
-    <div id="hoop"></div>
-    <div id="net"></div>
+  <button id="throwBtn">Бросить!</button>
 
-    <div id="ball"></div>
-    <div id="fly-ball"></div>
+  <script>
+    const tg = window.Telegram.WebApp;
+    tg.ready();
+    tg.expand();
 
-    <div id="message">ГОООЛ! 🏀</div>
-    <div id="tap-zone"></div>
+    const ball = document.getElementById('ball');
+    const scoreEl = document.getElementById('scoreEl');
+    const bestEl = document.getElementById('bestEl');
+    const throwBtn = document.getElementById('throwBtn');
+    const hoop = document.getElementById('hoop');
 
-    <script>
-        const tg = window.Telegram.WebApp;
-        tg.ready();
-        tg.expand();
+    let score = parseInt(localStorage.getItem('bp_score')) || 0;
+    let best = parseInt(localStorage.getItem('bp_best')) || 0;
 
-        let score = parseInt(localStorage.getItem('bp_score')) || 0;
-        let best = parseInt(localStorage.getItem('bp_best')) || 0;
+    scoreEl.innerText = score;
+    bestEl.innerText = 'Рекорд: ' + best;
 
-        const scoreEl = document.getElementById('score-board');
-        const bestEl = document.getElementById('best');
-        const ball = document.getElementById('ball');
-        const flyBall = document.getElementById('fly-ball');
-        const message = document.getElementById('message');
-        const hoop = document.getElementById('hoop');
-        const tapZone = document.getElementById('tap-zone');
+    let animationId;
+    let ballX, ballY, vx, vy;
+    let hoopRect;
 
+    // Функция для получения актуальных координат кольца
+    function getHoopPos() {
+      hoopRect = hoop.getBoundingClientRect();
+    }
+
+    window.addEventListener('resize', getHoopPos);
+    getHoopPos(); // Получаем координаты сразу при загрузке
+
+    throwBtn.addEventListener('click', () => {
+      // Сброс перед новым броском
+      score = 0;
+      scoreEl.innerText = score;
+      cancelAnimationFrame(animationId);
+      
+      ball.style.display = 'block';
+      
+      // СТАРТ: слева снизу
+      ballX = 50; 
+      ballY = window.innerHeight - 100;
+      
+      // ФИЗИКА: настроено так, чтобы гарантированно долетать до правой стороны
+      vx = 14;  // Скорость по горизонтали (достаточно высокая)
+      vy = -24; // Сила броска вверх
+
+      ball.style.left = ballX + 'px';
+      ball.style.top = ballY + 'px';
+
+      animate();
+    });
+
+    function animate() {
+      // Гравитация
+      vy += 1.2; 
+      
+      ballX += vx;
+      ballY += vy;
+
+      ball.style.left = ballX + 'px';
+      ball.style.top = ballY + 'px';
+
+      // Проверка попадания
+      // Вычисляем центр мяча и центр кольца
+      const ballCenterX = ballX + (ball.offsetWidth / 2);
+      const ballCenterY = ballY + (ball.offsetHeight / 2);
+      const hoopCenterX = hoopRect.left + (hoopRect.width / 2);
+      const hoopCenterY = hoopRect.top + (hoopRect.height / 2);
+
+      const dx = ballCenterX - hoopCenterX;
+      const dy = ballCenterY - hoopCenterY;
+      const distance = Math.sqrt(dx*dx + dy*dy);
+      
+      // Радиус кольца примерно половина его ширины. Если мяч близко к центру кольца - гол!
+      // 0.6 * hoopRect.width - это допуск попадания
+      if (distance < (hoopRect.width * 0.6) && vy > 0) { 
+        score++;
         scoreEl.innerText = score;
-        bestEl.innerText = 'Рекорд: ' + best;
-
-        let hoopX = window.innerWidth / 2;
-        let ballX = window.innerWidth / 2;
-        let hoopDir = 1;
-
-        function positionHoop() {
-            hoopX += hoopDir * 2;
-            if (hoopX > window.innerWidth - 60) hoopDir = -1;
-            if (hoopX < 60) hoopDir = 1;
-            hoop.style.left = hoopX + 'px';
-            hoop.style.transform = 'translateX(-50%)';
-            document.getElementById('net').style.left = hoopX + 'px';
-            document.getElementById('net').style.transform = 'translateX(-50%)';
+        
+        // Визуальный эффект попадания: убираем мяч, чтобы он не засчитался дважды
+        ballY = -100; 
+        ball.style.top = ballY + 'px';
+        
+        if (score > best) {
+          best = score;
+          localStorage.setItem('bp_best', best);
+          bestEl.innerText = 'Рекорд: ' + best;
         }
-        setInterval(positionHoop, 20);
+      }
 
-        // Управление: тап справа — мяч вправо, тап слева — влево
-        tapZone.addEventListener('click', (e) => {
-            if (e.clientX > window.innerWidth / 2) {
-                ballX = Math.min(window.innerWidth - 40, ballX + 40);
-            } else {
-                ballX = Math.max(40, ballX - 40);
-            }
-            ball.style.left = ballX + 'px';
-            ball.style.transform = 'translateX(-50%)';
-            throwBall();
-        });
-
-        function throwBall() {
-            flyBall.style.display = 'block';
-            flyBall.style.left = ballX + 'px';
-            flyBall.style.transform = 'translateX(-50%)';
-
-            let y = window.innerHeight - 120;
-            let vy = -33;
-
-            const anim = setInterval(() => {
-                y += vy;
-                vy += 1.1;
-                flyBall.style.top = y + 'px';
-
-                if (y <= 155 && vy > 0) {
-                    if (Math.abs(ballX - hoopX) < 50) {
-                        score++;
-                        if (score > best) {
-                            best = score;
-                            localStorage.setItem('bp_best', best);
-                        }
-                        localStorage.setItem('bp_score', score);
-                        scoreEl.innerText = score;
-                        bestEl.innerText = 'Рекорд: ' + best;
-                        message.innerText = 'ГОООЛ! 🏀';
-                        message.style.color = '#7CFC00';
-                    } else {
-                        message.innerText = 'Мимо!';
-                        message.style.color = '#ff5252';
-                        score = 0;
-                        localStorage.setItem('bp_score', 0);
-                        scoreEl.innerText = 0;
-                    }
-                    message.style.opacity = 1;
-                    setTimeout(() => message.style.opacity = 0, 800);
-                    clearInterval(anim);
-                    flyBall.style.display = 'none';
-                }
-            }, 20);
-        }
-    </script>
+      // Если мяч улетел за экран или упал вниз
+      if (ballY > window.innerHeight + 100 || ballX > window.innerWidth + 100) {
+        ball.style.display = 'none';
+      } else {
+        animationId = requestAnimationFrame(animate);
+      }
+    }
+  </script>
 </body>
 </html>
